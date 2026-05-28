@@ -534,6 +534,7 @@ export async function finalizeAuction(
   auctionId: number
 ): Promise<boolean> {
   const args: xdr.ScVal[] = [
+    new Address(callerPublicKey).toScVal(),
     nativeToScVal(BigInt(auctionId), { type: "u64" }),
   ];
 

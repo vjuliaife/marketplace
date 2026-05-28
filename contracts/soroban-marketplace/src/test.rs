@@ -280,6 +280,26 @@ fn test_cancel_listing_success() {
 }
 
 #[test]
+fn test_cancel_listing_rejects_pending_offers() {
+    let (env, client, artist, buyer, contract_id) = setup();
+    client.set_admin(&artist);
+    client.add_token_to_whitelist(&contract_id);
+
+    let listing_id = create_test_listing(&env, &client, &artist, &contract_id);
+    let offer_token = Address::generate(&env);
+    let offer_id = client.make_offer(&buyer, &listing_id, &5_000_000_i128, &offer_token);
+
+    let result = client.cancel_listing(&artist, &listing_id);
+    assert!(result);
+
+    let listing = client.get_listing(&listing_id);
+    assert_eq!(listing.status, ListingStatus::Cancelled);
+
+    let offer = client.get_offer(&offer_id);
+    assert_eq!(offer.status, OfferStatus::Rejected);
+}
+
+#[test]
 #[should_panic(expected = "Error(Contract, #5)")]
 fn test_cancel_listing_wrong_artist() {
     let (env, client, artist, buyer, contract_id) = setup();
@@ -860,6 +880,24 @@ fn test_create_auction_success() {
 }
 
 #[test]
+#[should_panic(expected = "Error(Contract, #1)")]
+fn test_create_auction_zero_reserve_rejected() {
+    let (env, client, artist, _, contract_id) = setup();
+    client.set_admin(&artist);
+    client.add_token_to_whitelist(&contract_id);
+
+    client.create_auction(
+        &artist,
+        &bytes!(&env, 0x516d74657374),
+        &contract_id,
+        &0,
+        &3600,
+        &0,
+        &valid_recipients(&env, &artist),
+    );
+}
+
+#[test]
 fn test_place_bid_success() {
     let (env, client, artist, buyer, contract_id) = setup();
     client.set_admin(&artist);
@@ -923,7 +961,7 @@ fn test_finalize_auction_with_winner() {
     // Jump in time
     env.ledger().set_timestamp(env.ledger().timestamp() + 3601);
 
-    client.finalize_auction(&id);
+    client.finalize_auction(&buyer, &id);
     let auction = client.get_auction(&id);
     assert_eq!(auction.status, crate::types::AuctionStatus::Finalized);
 }
@@ -946,9 +984,29 @@ fn test_finalize_auction_no_bids() {
 
     env.ledger().set_timestamp(env.ledger().timestamp() + 3601);
 
-    client.finalize_auction(&id);
+    client.finalize_auction(&artist, &id);
     let auction = client.get_auction(&id);
     assert_eq!(auction.status, crate::types::AuctionStatus::Cancelled);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn test_finalize_auction_before_expiry_rejects_non_creator() {
+    let (env, client, artist, buyer, contract_id) = setup();
+    client.set_admin(&artist);
+    client.add_token_to_whitelist(&contract_id);
+
+    let id = client.create_auction(
+        &artist,
+        &bytes!(&env, 0x51),
+        &contract_id,
+        &1_000_000,
+        &3600,
+        &0,
+        &valid_recipients(&env, &artist),
+    );
+
+    client.finalize_auction(&buyer, &id);
 }
 
 #[test]

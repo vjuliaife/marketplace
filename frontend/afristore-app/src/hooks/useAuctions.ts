@@ -91,6 +91,7 @@ export interface CreateAuctionInput {
   imageFile: File;
   reservePriceXlm: number;
   durationHours: number;
+  royaltyBps?: number;
 }
 
 export function useCreateAuction(creatorPublicKey: string | null) {
@@ -134,7 +135,8 @@ export function useCreateAuction(creatorPublicKey: string | null) {
           creatorPublicKey,
           metadataResult.cid,
           input.reservePriceXlm,
-          durationSeconds
+          durationSeconds,
+          input.royaltyBps
         );
 
         setProgress("Auction created successfully!");

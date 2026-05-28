@@ -15,6 +15,9 @@ const mockPrisma = vi.hoisted(() => ({
     create: vi.fn().mockResolvedValue({ id: 1, lastLedger: 0 }),
     update: vi.fn().mockResolvedValue({}),
   },
+  collection: {
+    upsert: vi.fn().mockResolvedValue({}),
+  },
 }));
 
 vi.mock('../db', () => ({ default: mockPrisma }));
@@ -184,6 +187,43 @@ describe('processEvent — null listingId', () => {
     expect(mockPrisma.marketplaceEvent.create).toHaveBeenCalledOnce();
     expect(mockPrisma.listing.upsert).not.toHaveBeenCalled();
     expect(mockPrisma.listing.update).not.toHaveBeenCalled();
+  });
+});
+
+// ── Deploy event types (Collection upsert) ────────────────────────────────────
+
+describe('processEvent — deploy events', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const deployTypes = ['DEPLOY_NORMAL_721', 'DEPLOY_NORMAL_1155', 'DEPLOY_LAZY_721', 'DEPLOY_LAZY_1155'];
+
+  for (const eventType of deployTypes) {
+    it(`upserts a collection on ${eventType}`, async () => {
+      const data = ['GCREATOR', 'CCONTRACT'];
+      await processEvent(makeEvent(eventType, null, 'GCREATOR', data, 700));
+
+      expect(mockPrisma.collection.upsert).toHaveBeenCalledOnce();
+      const call = mockPrisma.collection.upsert.mock.calls[0][0];
+      expect(call.where).toEqual({ contractAddress: 'CCONTRACT' });
+      expect(call.create.contractAddress).toBe('CCONTRACT');
+      expect(call.create.creator).toBe('GCREATOR');
+      expect(call.create.deployedAtLedger).toBe(700);
+    });
+  }
+
+  it('skips collection upsert when contract address is empty', async () => {
+    await processEvent(makeEvent('DEPLOY_NORMAL_721', null, 'GCREATOR', ['GCREATOR', ''], 700));
+    expect(mockPrisma.collection.upsert).not.toHaveBeenCalled();
+  });
+
+  it('falls back to actor as creator when creator field is missing in data', async () => {
+    const data = ['', 'CCONTRACT'];
+    await processEvent(makeEvent('DEPLOY_LAZY_1155', null, 'GACTOR', data, 800));
+    expect(mockPrisma.collection.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ creator: 'GACTOR', contractAddress: 'CCONTRACT' }),
+      })
+    );
   });
 });
 

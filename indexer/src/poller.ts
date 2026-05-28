@@ -91,7 +91,37 @@ export async function processEvent(event: any) {
     },
   });
 
-  // 2. Update Listing state based on event type
+  // 2. Handle deploy events (no listingId — collection deployments)
+  if (eventType === 'DEPLOY_NORMAL_721' || eventType === 'DEPLOY_NORMAL_1155' ||
+      eventType === 'DEPLOY_LAZY_721' || eventType === 'DEPLOY_LAZY_1155') {
+    const kindMap: Record<string, string> = {
+      DEPLOY_NORMAL_721:  'normal_721',
+      DEPLOY_NORMAL_1155: 'normal_1155',
+      DEPLOY_LAZY_721:    'lazy_721',
+      DEPLOY_LAZY_1155:   'lazy_1155',
+    };
+    const rawData = Array.isArray(data) ? data : [];
+    const creatorAddr  = rawData[0]?.toString() || actor;
+    const contractAddr = rawData[1]?.toString() || '';
+    if (contractAddr) {
+      await prisma.collection.upsert({
+        where: { contractAddress: contractAddr },
+        create: {
+          contractAddress: contractAddr,
+          kind: kindMap[eventType],
+          creator: creatorAddr,
+          deployedAtLedger: ledgerSequence,
+        },
+        update: {
+          creator: creatorAddr,
+          deployedAtLedger: ledgerSequence,
+        },
+      });
+    }
+    return;
+  }
+
+  // 3. Update Listing state based on event type
   if (!listingId) return;
 
   switch (eventType) {
@@ -165,36 +195,5 @@ export async function processEvent(event: any) {
         });
         break;
 
-    case 'DEPLOY_NORMAL_721':
-    case 'DEPLOY_NORMAL_1155':
-    case 'DEPLOY_LAZY_721':
-    case 'DEPLOY_LAZY_1155': {
-      const kindMap: Record<string, string> = {
-        DEPLOY_NORMAL_721:  'normal_721',
-        DEPLOY_NORMAL_1155: 'normal_1155',
-        DEPLOY_LAZY_721:    'lazy_721',
-        DEPLOY_LAZY_1155:   'lazy_1155',
-      };
-      // data is the raw tuple array [creator, collectionAddress]
-      const rawData = Array.isArray(data) ? data : [];
-      const creatorAddr  = rawData[0]?.toString() || actor;
-      const contractAddr = rawData[1]?.toString() || '';
-      if (contractAddr) {
-        await prisma.collection.upsert({
-          where: { contractAddress: contractAddr },
-          create: {
-            contractAddress: contractAddr,
-            kind: kindMap[eventType],
-            creator: creatorAddr,
-            deployedAtLedger: ledgerSequence,
-          },
-          update: {
-            creator: creatorAddr,
-            deployedAtLedger: ledgerSequence,
-          },
-        });
-      }
-      break;
-    }
   }
 }

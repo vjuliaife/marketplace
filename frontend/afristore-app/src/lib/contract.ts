@@ -464,25 +464,28 @@ export async function createAuction(
   creatorPublicKey: string,
   metadataCid: string,
   reservePriceXlm: number,
-  durationSeconds: number
+  durationSeconds: number,
+  royaltyBps: number = 0,
+  recipients: Array<{ address: string; percentage: number }> = []
 ): Promise<number> {
   const reserveStroops = BigInt(Math.round(reservePriceXlm * 10_000_000));
   const nativeToken = getNativeTokenConfig();
 
+  const finalRecipients = recipients.length > 0
+    ? recipients
+    : [{ address: creatorPublicKey, percentage: 100 }];
+
   const args: xdr.ScVal[] = [
-    // creator: Address
     new Address(creatorPublicKey).toScVal(),
-    // metadata_cid: Bytes
     nativeToScVal(Buffer.from(metadataCid, "utf-8"), { type: "bytes" }),
     new Address(nativeToken.address).toScVal(),
-    // reserve_price: i128
     nativeToScVal(reserveStroops, { type: "i128" }),
-    // duration: u64
     nativeToScVal(BigInt(durationSeconds), { type: "u64" }),
-    // royalty_bps: u32
-    nativeToScVal(0, { type: "u32" }),
-    // recipients: Vec<Recipient> (empty for MVP)
-    nativeToScVal([], { type: "vec" }),
+    nativeToScVal(royaltyBps, { type: "u32" }),
+    nativeToScVal(finalRecipients.map(r => ({
+        address: new Address(r.address),
+        percentage: r.percentage
+    })), { type: "vec" }),
   ];
 
   const retVal = await invokeContract(

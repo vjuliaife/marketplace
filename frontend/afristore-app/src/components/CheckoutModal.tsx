@@ -147,7 +147,7 @@ export function CheckoutModal({
                     <DollarSign className="text-brand-500 mt-0.5" size={18} />
                     <div>
                       <p className="text-sm font-semibold text-gray-900">Direct Fiat Purchase</p>
-                      <p className="mt-1 text-xs text-gray-600">Pay with your card. We'll instantly buy XLM and execute the smart contract trade for you.</p>
+                      <p className="mt-1 text-xs text-gray-600">Pay with your card. We&apos;ll instantly buy XLM and execute the smart contract trade for you.</p>
                     </div>
                   </div>
                 </div>

@@ -157,6 +157,7 @@ export async function revertLedgers(toLedger: number) {
               token: parsedData.token || '',
               status: 'Active',
               royaltyBps: parsedData.royalty_bps || 0,
+              originalCreator: parsedData.original_creator || parsedData.artist,
               createdAtLedger: ledgerSequence,
               updatedAtLedger: ledgerSequence,
             };

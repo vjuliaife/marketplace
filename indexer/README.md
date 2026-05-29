@@ -18,7 +18,7 @@ A lightweight off-chain indexer for the Afristore Marketplace Soroban contract. 
 - `GET /activity/recent` - Get the latest marketplace activity (sales, new listings). **[Cached: 30s]**
 - `GET /collections` - Get all deployed collections. **[Cached: 60s]**
 - `GET /wallets/<address>/activity?limit=50` - Event feed for a Stellar address (actor + JSON `buyer` / `artist` / … matches).
-- `GET /wallets/<address>/royalty-stats` - Total royalty estimate from **Sold** rows for that artist, plus a simple payout count/last-activity signal.
+- `GET /wallets/<address>/royalty-stats` - Total royalty estimate from **Sold** resales where the wallet is the **original creator** and the seller was someone else (matches on-chain `original_creator != seller` payouts).
 
 **Note**: Endpoints marked with **[Cached]** use Redis caching with the specified TTL to handle traffic spikes efficiently.
 

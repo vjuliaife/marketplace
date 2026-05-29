@@ -306,25 +306,26 @@ describe('GET /wallets/:address/activity', () => {
 describe('GET /wallets/:address/royalty-stats', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('returns totals for sold listings by that artist', async () => {
+  it('returns totals for resales where the wallet is the original creator', async () => {
     mockPrisma.listing.findMany.mockResolvedValue([
-      { listingId: 1n, price: 100, royaltyBps: 1000 },
-      { listingId: 2n, price: 200, royaltyBps: 500 },
+      { listingId: 1n, price: 100, royaltyBps: 1000, updatedAtLedger: 100 },
+      { listingId: 2n, price: 200, royaltyBps: 500, updatedAtLedger: 200 },
     ]);
-    mockPrisma.marketplaceEvent.findFirst.mockResolvedValue({
-      id: 1,
-      eventType: 'ARTWORK_SOLD',
-      actor: 'GARTIST',
-      data: {},
-      listingId: 1n,
-      ledgerSequence: 1,
-      ledgerTimestamp: new Date('2024-01-20T00:00:00Z'),
-    });
 
-    const res = await request(app).get('/wallets/GARTIST/royalty-stats');
+    const res = await request(app).get('/wallets/GCREATOR/royalty-stats');
 
     expect(res.status).toBe(200);
     expect(res.body.payoutCount).toBe(2);
     expect(parseFloat(res.body.totalEarned)).toBeCloseTo(20, 4);
+    expect(res.body.lastPayout).toBe(200000);
+    expect(mockPrisma.listing.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          originalCreator: 'GCREATOR',
+          status: 'Sold',
+          NOT: { artist: 'GCREATOR' },
+        },
+      })
+    );
   });
 });

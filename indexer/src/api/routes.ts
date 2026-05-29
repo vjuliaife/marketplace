@@ -71,7 +71,7 @@ router.get('/listings/:id', async (req: Request, res: Response) => {
         // Try to fetch metadata from IPFS gateway if available
         const gateway = process.env.IPFS_GATEWAY || 'https://ipfs.io/ipfs/';
         try {
-            const cid = listing.metadataCid || listing.metadata_cid || null;
+            const cid = listing.metadataCid || null;
             if (cid) {
                 const url = cid.startsWith('ipfs://') ? `${gateway}${cid.replace(/^ipfs:\/\//, '')}` : `${gateway}${cid}`;
                 const r = await axios.get(url, { timeout: 5000 });
@@ -236,16 +236,21 @@ router.get('/wallets/:address/activity', strictRateLimiter, async (req: Request,
     }
 });
 
-// GET /wallets/:address/royalty-stats — aggregates royalty-bearing sales for an artist
+// GET /wallets/:address/royalty-stats — royalty income from resales (seller != original creator)
 router.get('/wallets/:address/royalty-stats', strictRateLimiter, async (req: Request, res: Response) => {
     const { address } = req.params;
     try {
         const sold = await prisma.listing.findMany({
-            where: { artist: address as string, status: 'Sold' },
+            where: {
+                originalCreator: address as string,
+                status: 'Sold',
+                NOT: { artist: address as string },
+            },
             select: {
                 listingId: true,
                 price: true,
                 royaltyBps: true,
+                updatedAtLedger: true,
             },
         });
 
@@ -255,17 +260,17 @@ router.get('/wallets/:address/royalty-stats', strictRateLimiter, async (req: Req
             totalEarned += (p * row.royaltyBps) / 10000;
         }
 
-        const lastEvent = await prisma.marketplaceEvent.findFirst({
-            where: { eventType: 'ARTWORK_SOLD', actor: address as string },
-            orderBy: { ledgerSequence: 'desc' },
-        });
+        const lastSale = sold.reduce<(typeof sold)[0] | null>((latest, row) => {
+            if (!latest || row.updatedAtLedger > latest.updatedAtLedger) {
+                return row;
+            }
+            return latest;
+        }, null);
 
         res.json({
             totalEarned: totalEarned.toFixed(7),
             payoutCount: sold.length,
-            lastPayout: lastEvent?.ledgerTimestamp
-                ? new Date(lastEvent.ledgerTimestamp).getTime()
-                : 0,
+            lastPayout: lastSale ? lastSale.updatedAtLedger * 1000 : 0,
         });
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch royalty stats' });

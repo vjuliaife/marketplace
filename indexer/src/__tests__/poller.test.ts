@@ -128,6 +128,7 @@ describe('processEvent — LISTING_CREATED', () => {
     expect(call.create).toMatchObject({
       listingId: 42n,
       artist: 'GA_ARTIST',
+      originalCreator: 'GA_ARTIST',
       status: 'Active',
       createdAtLedger: 200,
     });

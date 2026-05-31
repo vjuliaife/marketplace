@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Prevent dotenv from loading .env so module-level CONTRACT_ID constants stay empty
+vi.mock('dotenv', () => ({ default: { config: vi.fn() } }));
+
 // ── Mock Prisma ───────────────────────────────────────────────────────────────
 
 const mockTx = vi.hoisted(() => ({
@@ -19,10 +22,12 @@ const mockPrisma = vi.hoisted(() => ({
   listing: {
     upsert: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
+    updateMany: vi.fn().mockResolvedValue({ count: 1 }),
   },
   auction: {
     upsert: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
+    updateMany: vi.fn().mockResolvedValue({ count: 1 }),
   },
   offer: {
     upsert: vi.fn().mockResolvedValue({}),
@@ -73,8 +78,7 @@ vi.mock('@stellar/stellar-sdk', () => ({
   },
 }));
 
-import { processEvent, revertLedgers, validateHashContinuity } from '../poller';
-import { processEvent, revertLedgers, startPolling } from '../poller';
+import { processEvent, revertLedgers, validateHashContinuity, startPolling } from '../poller';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -146,9 +150,9 @@ describe('processEvent — LISTING_CREATED', () => {
     });
   });
 
-  it('does not call listing.update for LISTING_CREATED', async () => {
+  it('does not call listing.updateMany for LISTING_CREATED', async () => {
     await processEvent(makeEvent('LISTING_CREATED', 1n, 'GA', { artist: 'GA' }, 1));
-    expect(mockPrisma.listing.update).not.toHaveBeenCalled();
+    expect(mockPrisma.listing.updateMany).not.toHaveBeenCalled();
   });
 });
 
@@ -161,8 +165,8 @@ describe('processEvent — LISTING_UPDATED', () => {
     const data = { new_price: '20000000', metadata_cid: 'QmNewCid' };
     await processEvent(makeEvent('LISTING_UPDATED', 5n, '', data, 300));
 
-    expect(mockPrisma.listing.update).toHaveBeenCalledOnce();
-    expect(mockPrisma.listing.update).toHaveBeenCalledWith({
+    expect(mockPrisma.listing.updateMany).toHaveBeenCalledOnce();
+    expect(mockPrisma.listing.updateMany).toHaveBeenCalledWith({
       where: { listingId: 5n },
       data: expect.objectContaining({
         price: '20000000',
@@ -182,7 +186,7 @@ describe('processEvent — ARTWORK_SOLD', () => {
     const data = { buyer: 'GB_BUYER' };
     await processEvent(makeEvent('ARTWORK_SOLD', 8n, 'GB_BUYER', data, 400));
 
-    expect(mockPrisma.listing.update).toHaveBeenCalledWith({
+    expect(mockPrisma.listing.updateMany).toHaveBeenCalledWith({
       where: { listingId: 8n },
       data: expect.objectContaining({ status: 'Sold', owner: 'GB_BUYER' }),
     });
@@ -197,7 +201,7 @@ describe('processEvent — LISTING_CANCELLED', () => {
   it('sets status to Cancelled', async () => {
     await processEvent(makeEvent('LISTING_CANCELLED', 3n, '', {}, 500));
 
-    expect(mockPrisma.listing.update).toHaveBeenCalledWith({
+    expect(mockPrisma.listing.updateMany).toHaveBeenCalledWith({
       where: { listingId: 3n },
       data: expect.objectContaining({ status: 'Cancelled' }),
     });
@@ -242,8 +246,8 @@ describe('processEvent — BID_PLACED', () => {
     };
     await processEvent(makeEvent('BID_PLACED', 11n, 'GB_BIDDER', data, 610));
 
-    expect(mockPrisma.auction.update).toHaveBeenCalledOnce();
-    expect(mockPrisma.auction.update).toHaveBeenCalledWith({
+    expect(mockPrisma.auction.updateMany).toHaveBeenCalledOnce();
+    expect(mockPrisma.auction.updateMany).toHaveBeenCalledWith({
       where: { auctionId: 11n },
       data: expect.objectContaining({
         highestBid: '55000000',
@@ -266,8 +270,8 @@ describe('processEvent — AUCTION_RESOLVED', () => {
     };
     await processEvent(makeEvent('AUCTION_RESOLVED', 11n, 'GA_CREATOR', data, 620));
 
-    expect(mockPrisma.auction.update).toHaveBeenCalledOnce();
-    expect(mockPrisma.auction.update).toHaveBeenCalledWith({
+    expect(mockPrisma.auction.updateMany).toHaveBeenCalledOnce();
+    expect(mockPrisma.auction.updateMany).toHaveBeenCalledWith({
       where: { auctionId: 11n },
       data: expect.objectContaining({
         status: 'Finalized',
@@ -332,8 +336,8 @@ describe('processEvent — OFFER_ACCEPTED', () => {
       },
     });
 
-    expect(mockPrisma.listing.update).toHaveBeenCalledOnce();
-    expect(mockPrisma.listing.update).toHaveBeenCalledWith({
+    expect(mockPrisma.listing.updateMany).toHaveBeenCalledOnce();
+    expect(mockPrisma.listing.updateMany).toHaveBeenCalledWith({
       where: { listingId: 42n },
       data: expect.objectContaining({
         status: 'Sold',
@@ -440,10 +444,57 @@ describe('validateHashContinuity', () => {
     expect(result).toBe(false);
     // revertLedgers wraps everything in a prisma transaction
     expect(mockPrisma.$transaction).toHaveBeenCalledOnce();
+  });
+});
+
 // ── startPolling validation ───────────────────────────────────────────────────
 
 describe('startPolling', () => {
   it('throws an error if both CONTRACT_ID and LAUNCHPAD_CONTRACT_ID are empty', async () => {
     await expect(startPolling()).rejects.toThrow('At least one of MARKETPLACE_CONTRACT_ID or LAUNCHPAD_CONTRACT_ID must be set');
+  });
+});
+
+// ── Out-of-order events — does not throw (#241) ───────────────────────────────
+
+describe('processEvent — out-of-order events do not throw', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('LISTING_UPDATED with no prior listing resolves without throwing', async () => {
+    mockPrisma.listing.updateMany.mockResolvedValueOnce({ count: 0 });
+    const data = { new_price: '999', metadata_cid: 'Qm' };
+    await expect(
+      processEvent(makeEvent('LISTING_UPDATED', 99n, '', data, 500))
+    ).resolves.not.toThrow();
+  });
+
+  it('ARTWORK_SOLD with no prior listing resolves without throwing', async () => {
+    mockPrisma.listing.updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(
+      processEvent(makeEvent('ARTWORK_SOLD', 99n, 'GB', { buyer: 'GB' }, 500))
+    ).resolves.not.toThrow();
+  });
+
+  it('LISTING_CANCELLED with no prior listing resolves without throwing', async () => {
+    mockPrisma.listing.updateMany.mockResolvedValueOnce({ count: 0 });
+    await expect(
+      processEvent(makeEvent('LISTING_CANCELLED', 99n, '', {}, 500))
+    ).resolves.not.toThrow();
+  });
+
+  it('BID_PLACED with no prior auction resolves without throwing', async () => {
+    mockPrisma.auction.updateMany.mockResolvedValueOnce({ count: 0 });
+    const data = { bidder: 'GB', bid_amount: '100' };
+    await expect(
+      processEvent(makeEvent('BID_PLACED', 99n, 'GB', data, 500))
+    ).resolves.not.toThrow();
+  });
+
+  it('AUCTION_RESOLVED with no prior auction resolves without throwing', async () => {
+    mockPrisma.auction.updateMany.mockResolvedValueOnce({ count: 0 });
+    const data = { winner: 'GB', amount: '100' };
+    await expect(
+      processEvent(makeEvent('AUCTION_RESOLVED', 99n, 'GA', data, 500))
+    ).resolves.not.toThrow();
   });
 });

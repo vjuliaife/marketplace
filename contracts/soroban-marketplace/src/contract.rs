@@ -913,7 +913,6 @@ impl MarketplaceContract {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[allow(dead_code)]
     fn distribute_payout(
         env: &Env,
         token_addr: &Address,

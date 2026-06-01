@@ -32,6 +32,7 @@ import {
   getNativeTokenConfig,
   getTokenConfigByAddress,
 } from "@/config/tokens";
+import { fetchListings, fetchAuctions } from "./indexer";
 
 // ── Types mirrored from the Rust contract ────────────────────
 
@@ -376,7 +377,7 @@ export async function getArtistListings(artistPublicKey: string): Promise<number
 }
 
 /**
- * getAllListings — Fetch every listing from ID 1 → total in parallel.
+ * getAllListings — Fetch listings using indexer if possible, fallback to on-chain scan.
  */
 export async function getAllListings(): Promise<Listing[]> {
   if (isE2eMockChain()) {
@@ -384,6 +385,17 @@ export async function getAllListings(): Promise<Listing[]> {
     return getE2eMockListings();
   }
 
+  // Optimized path: Use the indexer (1 RPC/HTTP call)
+  try {
+    const res = await fetchListings({ status: "Active" });
+    if (res.listings && res.listings.length > 0) {
+      return res.listings as Listing[];
+    }
+  } catch (e) {
+    console.warn("[indexer] getAllListings fallback:", e);
+  }
+
+  // Backup path: On-chain scan (N RPC calls)
   const total = await getTotalListings();
   const ids = Array.from({ length: total }, (_, i) => i + 1);
   const results = await Promise.all(
@@ -601,10 +613,20 @@ export async function getArtistAuctions(
 }
 
 /**
- * getAllAuctions — Fetch auctions by probing IDs in parallel batches.
- * Stops after a batch where every fetch fails (no more auctions exist).
+ * getAllAuctions — Fetch auctions using indexer if possible, fallback to on-chain scan.
  */
 export async function getAllAuctions(): Promise<Auction[]> {
+  // Optimized path: Use the indexer (1 RPC/HTTP call)
+  try {
+    const raw = await fetchAuctions({ status: "Active" });
+    if (raw && raw.length > 0) {
+      return raw as Auction[];
+    }
+  } catch (e) {
+    console.warn("[indexer] getAllAuctions fallback:", e);
+  }
+
+  // Backup path: On-chain scan (Probing loop)
   const auctions: Auction[] = [];
   const BATCH = 10;
   let offset = 1;

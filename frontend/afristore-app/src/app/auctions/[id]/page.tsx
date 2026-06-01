@@ -13,7 +13,8 @@ import { fetchMetadata, cidToGatewayUrl, ArtworkMetadata } from "@/lib/ipfs";
 import { getListingActivity, ActivityEvent } from "@/lib/indexer";
 import { getReadableErrorMessage } from "@/lib/errors";
 import { useWalletContext } from "@/context/WalletContext";
-import { usePlaceBid, useFinalizeAuction } from "@/hooks/useAuctions";
+import { usePlaceBid } from "@/hooks/usePlaceBid";
+import { useFinalizeAuction } from "@/hooks/useAuctions";
 import { GuardButton } from "@/components/WalletGuard";
 import {
   ArrowLeft,
@@ -265,13 +266,12 @@ export default function AuctionDetailPage() {
 
             {/* Status badge */}
             <span
-              className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
-                isActive
+              className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${isActive
                   ? "bg-green-500 text-white"
                   : isFinalized
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-400 text-white"
-              }`}
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-400 text-white"
+                }`}
             >
               {auction.status}
             </span>
@@ -406,19 +406,17 @@ export default function AuctionDetailPage() {
 
             {(isFinalized || isCancelled) && !finalizeSuccess && (
               <div
-                className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${
-                  isFinalized
+                className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${isFinalized
                     ? "bg-blue-50 text-blue-700"
                     : "bg-gray-100 text-gray-600"
-                }`}
+                  }`}
               >
                 <CheckCircle2 size={16} />
                 {isFinalized
-                  ? `Won by ${
-                      auction.highest_bidder
-                        ? `${auction.highest_bidder.slice(0, 8)}…`
-                        : "unknown"
-                    } for ${highestBidXlm} XLM`
+                  ? `Won by ${auction.highest_bidder
+                    ? `${auction.highest_bidder.slice(0, 8)}…`
+                    : "unknown"
+                  } for ${highestBidXlm} XLM`
                   : "Auction ended with no bids"}
               </div>
             )}
@@ -483,11 +481,10 @@ export default function AuctionDetailPage() {
               <button
                 key={t}
                 onClick={() => setActiveTab(t)}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
-                  activeTab === t
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${activeTab === t
                     ? "bg-brand-500 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 {t === "details" ? "Details" : "Bid History"}
                 {t === "bids" && (

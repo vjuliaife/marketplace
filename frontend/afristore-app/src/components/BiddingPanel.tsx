@@ -7,7 +7,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { Auction, stroopsToXlm } from "@/lib/contract";
 import { useWalletContext } from "@/context/WalletContext";
-import { usePlaceBid, useFinalizeAuction } from "@/hooks/useAuctions";
+import { usePlaceBid } from "@/hooks/usePlaceBid";
+import { useFinalizeAuction } from "@/hooks/useAuctions";
 import { GuardButton } from "@/components/WalletGuard";
 import {
   Gavel,
@@ -119,9 +120,8 @@ export function BiddingPanel({
       {/* Status badge */}
       <div className="flex items-center justify-between">
         <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-            STATUS_COLOR[auction.status] ?? ""
-          }`}
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_COLOR[auction.status] ?? ""
+            }`}
         >
           {auction.status}
         </span>

@@ -18,6 +18,8 @@ import { fetchAuctions } from "@/lib/indexer";
 import { uploadImageToIPFS, uploadMetadataToIPFS, ArtworkMetadata } from "@/lib/ipfs";
 import { getReadableErrorMessage } from "@/lib/errors";
 import { useTransientErrorToast } from "./useTransientErrorToast";
+import { assertSupportedTokenAddress } from "@/lib/token-support";
+import { DEFAULT_TOKEN } from "@/config/tokens";
 
 // ── useAuctions ──────────────────────────────────────────────
 
@@ -104,6 +106,7 @@ export interface CreateAuctionInput {
   reservePriceXlm: number;
   durationHours: number;
   royaltyBps?: number;
+  tokenAddress?: string;
 }
 
 export function useCreateAuction(creatorPublicKey: string | null) {
@@ -141,15 +144,21 @@ export function useCreateAuction(creatorPublicKey: string | null) {
         setProgress("Uploading metadata to IPFS…");
         const metadataResult = await uploadMetadataToIPFS(metadata, input.title);
 
-        // Step 4: Call the Soroban contract.
+        // Step 4: Validate token and call the Soroban contract.
         setProgress("Creating on-chain auction…");
+        const token = await assertSupportedTokenAddress(
+          input.tokenAddress ?? DEFAULT_TOKEN.address,
+          "auction"
+        );
         const durationSeconds = input.durationHours * 3600;
         const auctionId = await createAuction(
           creatorPublicKey,
           metadataResult.cid,
           input.reservePriceXlm,
           durationSeconds,
-          input.royaltyBps
+          input.royaltyBps,
+          [],
+          token.address
         );
 
         setProgress("Auction created successfully!");

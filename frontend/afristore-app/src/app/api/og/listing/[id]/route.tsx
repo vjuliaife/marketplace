@@ -2,7 +2,6 @@ import { ImageResponse } from 'next/og'
 import { getListing, getAuction, stroopsToXlm } from '@/lib/contract'
 import { fetchMetadata, cidToGatewayUrl } from '@/lib/ipfs'
 
-export const runtime = 'edge'
 
 export async function GET(
   request: Request,

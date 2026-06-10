@@ -1,7 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { fetchRoyaltyStats, fetchArtistListings } from '@/lib/indexer'
 
-export const runtime = 'edge'
 
 export async function GET(
   request: Request,

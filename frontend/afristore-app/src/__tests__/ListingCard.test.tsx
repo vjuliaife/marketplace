@@ -122,6 +122,8 @@ function makeListing(overrides: Partial<Listing> = {}): Listing {
     listing_id: 1,
     artist: 'GARTIST123',
     metadata_cid: 'QmTestCid',
+    collection: 'CCOLLECTION',
+    token_id: 1,
     price: 10_000_000n, // 1 XLM
     currency: 'XLM',
     token: 'CTOKEN',
@@ -129,8 +131,6 @@ function makeListing(overrides: Partial<Listing> = {}): Listing {
     status: 'Active',
     owner: null,
     created_at: 1000,
-    original_creator: 'GARTIST123',
-    royalty_bps: 500,
     ...overrides,
   };
 }

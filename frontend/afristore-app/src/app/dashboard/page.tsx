@@ -237,7 +237,7 @@ export default function DashboardPage() {
                             <span className="font-bold text-xl">#{l.listing_id}</span>
                           </div>
                           <div className="flex flex-col gap-1.5">
-                            <span className="text-[10px] font-mono text-white/40 tracking-wider">CID: {l.metadata_cid.slice(0, 16)}…</span>
+                            <span className="text-[10px] font-mono text-white/40 tracking-wider">CID: {l.metadata_cid?.slice(0, 16) || "N/A"}…</span>
                             <div className="flex items-center gap-3">
                               <span className="font-display text-2xl font-bold text-white">{stroopsToXlm(l.price)}</span>
                               <span className="text-[10px] font-bold text-brand-400 uppercase tracking-widest">{getTokenSymbol(l.token)}</span>

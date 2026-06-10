@@ -54,13 +54,19 @@ import { BiddingPanel } from '@/components/BiddingPanel';
 function makeAuction(overrides = {}) {
   return {
     auction_id: 1,
+    creator: 'GCREATOR',
     artist: 'GARTIST',
     metadata_cid: 'Qm',
+    collection: 'CCOLLECTION',
+    token_id: 1,
+    token: 'CTOKEN',
+    created_at: 100,
+    recipients: [],
     reserve_price: 10_000_000n, // 1 XLM
     highest_bid: 0n,
     highest_bidder: null,
     end_time: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
-    status: 'Active',
+    status: 'Active' as const,
     ...overrides,
   };
 }

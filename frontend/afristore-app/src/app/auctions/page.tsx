@@ -39,8 +39,9 @@ const TABS: { key: Tab; label: string }[] = [
 const metadataCache = new Map<string, ArtworkMetadata | null>();
 
 async function getCachedMetadata(
-  cid: string
+  cid?: string
 ): Promise<ArtworkMetadata | null> {
+  if (!cid) return null;
   if (metadataCache.has(cid)) return metadataCache.get(cid) ?? null;
   try {
     const meta = await fetchMetadata(cid);
@@ -171,6 +172,8 @@ export default function AuctionsPage() {
       const entries: [string, ArtworkMetadata | null][] = [];
       await Promise.all(
         auctions.map(async (a) => {
+          if (!a.metadata_cid) return;
+          if (!a.metadata_cid) return;
           const meta = await getCachedMetadata(a.metadata_cid);
           entries.push([a.metadata_cid, meta]);
         })

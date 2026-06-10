@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
-import ListingDetailPage from '@/app/listings/[id]/page.tsx'
+import ListingDetailPage from '@/app/listings/[id]/page'
 
 // Mock the dependencies
 jest.mock('@/context/WalletContext', () => ({
@@ -36,7 +36,7 @@ jest.mock('@/hooks/useUserActivity', () => ({
 
 describe('Regression Test: Invalid Listing IDs', () => {
   it('renders Artwork Not Found state for invalid IDs', async () => {
-    render(<ListingDetailPage />)
+    render(<ListingDetailPage params={{ id: '1' }} />)
 
     // Wait for the async loading to finish and show error
     await waitFor(() => {

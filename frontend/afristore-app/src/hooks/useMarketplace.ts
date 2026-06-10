@@ -82,7 +82,7 @@ export function useMarketplace(opts?: { page?: number; limit?: number }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [opts?.page, opts?.limit]);
 
   useEffect(() => {
     refresh();

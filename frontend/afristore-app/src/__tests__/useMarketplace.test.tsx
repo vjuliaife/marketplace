@@ -223,10 +223,7 @@ describe('useCreateListing', () => {
       return (
         <div>
           <button onClick={async () => setResult(await create({
-            title: 'T', description: 'D', artistName: 'A',
-            year: '2024', category: 'C',
-            imageFile: new File([], 'f.png'),
-            price: 10, tokenAddress: 'CTOKEN', royaltyBps: 500,
+            collectionAddress: 'C', nftTokenId: 1, price: 100, tokenAddress: 'T',
           }))}>c</button>
           <span data-testid="result">{String(result)}</span>
         </div>
@@ -247,10 +244,7 @@ describe('useCreateListing', () => {
       return (
         <div>
           <button onClick={async () => setResult(await create({
-            title: 'T', description: 'D', artistName: 'A',
-            year: '2024', category: 'C',
-            imageFile: new File([], 'f.png'),
-            price: 10, tokenAddress: 'CTOKEN', royaltyBps: 500,
+            collectionAddress: 'C', nftTokenId: 1, price: 100, tokenAddress: 'T',
           }))}>c</button>
           <span data-testid="result">{String(result)}</span>
           <span data-testid="error">{error ?? 'none'}</span>

@@ -526,7 +526,8 @@ export default function AuctionDetailPage() {
                 <div>
                   <p className="text-xs text-gray-400">Royalty</p>
                   <p className="font-medium text-gray-700">
-                    {(auction.royalty_bps / 100).toFixed(1)}%
+                    {/* Royalties handled by collection contract natively */}
+                    Enforced natively
                   </p>
                 </div>
               </div>

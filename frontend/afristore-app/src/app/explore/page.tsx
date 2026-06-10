@@ -30,7 +30,8 @@ const PAGE_SIZE = 12;
 
 const metadataCache = new Map<string, ArtworkMetadata | null>();
 
-async function getCachedMetadata(cid: string): Promise<ArtworkMetadata | null> {
+async function getCachedMetadata(cid?: string): Promise<ArtworkMetadata | null> {
+  if (!cid) return null;
   if (metadataCache.has(cid)) return metadataCache.get(cid) ?? null;
   try {
     const meta = await fetchMetadata(cid);
@@ -117,6 +118,7 @@ export default function ExplorePage() {
       const entries: [string, ArtworkMetadata | null][] = [];
       await Promise.all(
         allListings.map(async (l) => {
+          if (!l.metadata_cid) return;
           const meta = await getCachedMetadata(l.metadata_cid);
           entries.push([l.metadata_cid, meta]);
         })
@@ -135,7 +137,7 @@ export default function ExplorePage() {
     // Category filter (IPFS metadata — client-side only)
     if (filters.category !== "All") {
       result = result.filter((l) => {
-        const meta = metadataMap.get(l.metadata_cid);
+        const meta = l.metadata_cid ? metadataMap.get(l.metadata_cid) : null;
         return meta?.category === filters.category;
       });
     }

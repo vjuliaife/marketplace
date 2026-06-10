@@ -27,6 +27,8 @@ jobs:
         run: cargo fmt --check
       - name: Run Cargo Clippy (Linting)
         run: cargo clippy
+      - name: Build WASM Dependencies
+        run: cargo build --target wasm32v1-none --release
       - name: Run Unit Tests
         run: cargo test
 

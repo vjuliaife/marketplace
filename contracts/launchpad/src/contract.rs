@@ -210,7 +210,13 @@ impl Launchpad {
         );
 
         storage::record_collection(&env, &creator, &addr, CollectionKind::Normal721);
-        events::publish_deploy(&env, symbol_short!("n721"), &creator, &addr);
+        events::publish_deploy(
+            &env,
+            symbol_short!("n721"),
+            &creator,
+            &addr,
+            &CollectionKind::Normal721,
+        );
         Ok(addr)
     }
 
@@ -254,7 +260,13 @@ impl Launchpad {
         );
 
         storage::record_collection(&env, &creator, &addr, CollectionKind::Normal1155);
-        events::publish_deploy(&env, symbol_short!("n1155"), &creator, &addr);
+        events::publish_deploy(
+            &env,
+            symbol_short!("n1155"),
+            &creator,
+            &addr,
+            &CollectionKind::Normal1155,
+        );
         Ok(addr)
     }
 
@@ -308,7 +320,13 @@ impl Launchpad {
         );
 
         storage::record_collection(&env, &creator, &addr, CollectionKind::LazyMint721);
-        events::publish_deploy(&env, symbol_short!("l721"), &creator, &addr);
+        events::publish_deploy(
+            &env,
+            symbol_short!("l721"),
+            &creator,
+            &addr,
+            &CollectionKind::LazyMint721,
+        );
         Ok(addr)
     }
 
@@ -354,7 +372,13 @@ impl Launchpad {
         );
 
         storage::record_collection(&env, &creator, &addr, CollectionKind::LazyMint1155);
-        events::publish_deploy(&env, symbol_short!("l1155"), &creator, &addr);
+        events::publish_deploy(
+            &env,
+            symbol_short!("l1155"),
+            &creator,
+            &addr,
+            &CollectionKind::LazyMint1155,
+        );
         Ok(addr)
     }
 
@@ -396,5 +420,32 @@ impl Launchpad {
 
     pub fn platform_fee(env: Env) -> (Address, u32) {
         storage::get_platform_fee(&env)
+    }
+
+    // ── Query API (issue: launchpad contract query API + deploy events) ───
+
+    /// All collections deployed by a specific creator address.
+    /// Callable from frontend and CLI.
+    pub fn get_creator_collections(env: Env, creator: Address) -> Vec<CollectionRecord> {
+        storage::collections_by_creator(&env, &creator)
+    }
+
+    /// Look up a single collection record by its deployed contract address.
+    /// Returns `None` if the address was not deployed through this launchpad.
+    /// Callable from frontend and CLI.
+    pub fn get_collection_by_id(env: Env, address: Address) -> Option<CollectionRecord> {
+        storage::collection_by_address(&env, &address)
+    }
+
+    /// Global registry of every collection ever deployed through this launchpad.
+    /// Callable from frontend and CLI.
+    pub fn get_all_collections(env: Env) -> Vec<CollectionRecord> {
+        storage::all_collections(&env)
+    }
+
+    /// Total number of collections deployed through this launchpad.
+    /// Callable from frontend and CLI.
+    pub fn get_collection_count(env: Env) -> u64 {
+        storage::collection_count(&env)
     }
 }

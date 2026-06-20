@@ -160,18 +160,21 @@ Open [http://localhost:3000](http://localhost:3000)
 | GET | `/health` | Health check (DB, Redis, poller status) |
 | GET | `/metrics` | Prometheus metrics |
 
-## Current Testnet Deployment (2026-04-09)
+## Current Testnet Deployment (2026-06-20)
 
 | Item | Address / ID | Notes |
 |---|---|---|
 | Deployer / Admin Wallet | `GBFUNHEQOVN35LFEKP7SZXFYJPMJ3WLXLX4PQZGBK737NTLRHOKVES3F` | Testnet account |
-| Marketplace (active) | `CB74XQOHEVOL2NQ376JLVW5IGVM6I5VFDSHG66YKSHDQKRNTYGGXW25E` | Frontend default |
-| Launchpad Factory | `CA4RKSR4ORRIFBBW64MXCWS7GGJ4GY6AIXRGU5EGS43XBDDB7OYV3TRG` | Initialised with WASM hashes |
-| Normal 1155 Collection | `CAQBWUKVLOR5W43QBQDFJAHSE2LUGCALRDCM7EVEO36FTWOP5P2O36ML` | Deployed via launchpad |
-| Normal ERC-721 | `f30ec91a14455d1df413aeeeb50b45006635f1d07c428451c9e48d8491defd4d` | Deployed via launchpad |
-| Normal ERC-1155 | `4f75324c7833a76f78600fa1852872fc75a16889e99a386e1f33efd3b8f95c6c` | Deployed via launchpad |
-| Lazy Mint ERC-721 | `ca1fc3ce988235f088c332c52550b49e4dc427ea2a48827440d334a042ddec2e` | Deployed via launchpad |
-| Lazy Mint ERC-1155 | `f71b7c5c82243f4b5176c554615b08e2d228043b51cdb9023813a94ae2db9f4f` | Deployed via launchpad |
+| Marketplace (active) | `CCE43HCMI53ANOL3BSSQYXAVBSSKW6CXXGSTNTUEIPHQDTWYILTKFAR5` | Frontend default |
+| Launchpad Factory | `CDVWRCQLULIFF635VU77DJRXRWREASG7OENHUTRPY553BMPQJT7GLM7H` | Initialised with WASM hashes |
+| Normal 721 Collection | `CA6DGVWNLKKJOKTXKCEHVWD57RSRIAAMPAQKTAKY3SKCP5QN4UNP4ACT` | Deployed via launchpad |
+| Normal 1155 Collection | `CB5SXUJF5BEYJHAFLZV655COZBNETEGDHOQB3EO2XDT2GY3Z3MDZCZOF` | Deployed via launchpad |
+| Lazy 721 Collection | `CCRQ5WQNR7IC52ZR6A2KOIGU7VTXJXGTH3CFLXTWK246FKM3X3IFOFEU` | Deployed via launchpad |
+| Lazy 1155 Collection | `CB5A7IEUI3V7YFYTC3OS2JZJXTSQ5OJWACWJ35K5ELYE2OOE7TKYGWKH` | Deployed via launchpad |
+| WASM Normal 721 | `f30ec91a14455d1df413aeeeb50b45006635f1d07c428451c9e48d8491defd4d` | Installed hash |
+| WASM Normal 1155 | `4f75324c7833a76f78600fa1852872fc75a16889e99a386e1f33efd3b8f95c6c` | Installed hash |
+| WASM Lazy 721 | `ca1fc3ce988235f088c332c52550b49e4dc427ea2a48827440d334a042ddec2e` | Installed hash |
+| WASM Lazy 1155 | `f71b7c5c82243f4b5176c554615b08e2d228043b51cdb9023813a94ae2db9f4f` | Installed hash |
 
 ## Environment Variables
 

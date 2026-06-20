@@ -68,23 +68,25 @@ fi
 # ── Upload WASM to network ────────────────────────────────────
 echo ""
 echo "Step 3/4  Uploading WASM to ${NETWORK}..."
-WASM_HASH=$(stellar contract install \
+  output=$(stellar contract upload \
   --wasm "$WASM" \
   --source "$STELLAR_SECRET" \
   --rpc-url "$RPC_URL" \
   --network-passphrase "Test SDF Network ; September 2015" \
-  --ignore-checks 2>&1 | tail -1)
+  --ignore-checks 2>&1) || { echo "$output" >&2; exit 1; }
+WASM_HASH=$(echo "$output" | tail -1)
 echo "  WASM hash: $WASM_HASH"
 
 # ── Deploy contract instance ──────────────────────────────────
 echo ""
 echo "Step 4/4  Deploying contract instance..."
-CONTRACT_ID=$(stellar contract deploy \
+  output=$(stellar contract deploy \
   --wasm-hash "$WASM_HASH" \
   --source "$STELLAR_SECRET" \
   --rpc-url "$RPC_URL" \
   --network-passphrase "Test SDF Network ; September 2015" \
-  --ignore-checks 2>&1 | tail -1)
+  --ignore-checks 2>&1) || { echo "$output" >&2; exit 1; }
+CONTRACT_ID=$(echo "$output" | tail -1)
 echo "  Contract ID: $CONTRACT_ID"
 
 # ── Write frontend .env.local ────────────────────────────────

@@ -27,6 +27,7 @@ model Listing {
   collection      String
   nftTokenId      BigInt
   token           String
+  metadataCid     String?
   status          String   // "Active", "Sold", "Cancelled", "Auction"
   recipients      Json?
   createdAtLedger Int
@@ -42,6 +43,7 @@ model Auction {
   collection      String
   nftTokenId      BigInt
   token           String
+  metadataCid     String?
   reservePrice    Decimal  @db.Decimal(32, 7)
   highestBid      Decimal  @db.Decimal(32, 7)
   highestBidder   String?

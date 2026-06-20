@@ -30,12 +30,14 @@ done
 # 3. Upload NFT WASMs
 echo "Step 3/6  Uploading NFT WASMs..."
 upload_wasm() {
-  stellar contract install \
+  local output
+  output=$(stellar contract upload \
     --wasm "$TARGET_DIR/$1.wasm" \
     --source "$STELLAR_SECRET" \
     --rpc-url "$RPC_URL" \
     --network-passphrase "Test SDF Network ; September 2015" \
-    --ignore-checks 2>&1 | tail -1
+    --ignore-checks 2>&1) || { echo "$output" >&2; exit 1; }
+  echo "$output" | tail -1
 }
 
 HASH_N721=$(upload_wasm collection_nft_erc721)
@@ -49,12 +51,14 @@ echo "  Lazy 1155 Hash:    $HASH_L1155"
 
 # 4. Deploy Launchpad
 echo "Step 4/6  Deploying Launchpad..."
-LAUNCHPAD_ID=$(stellar contract deploy \
-  --wasm "$TARGET_DIR/soroban_launchpad.wasm" \
+  LAUNCHPAD_WASM_HASH=$(upload_wasm soroban_launchpad)
+  output=$(stellar contract deploy \
+  --wasm-hash "$LAUNCHPAD_WASM_HASH" \
   --source "$STELLAR_SECRET" \
   --rpc-url "$RPC_URL" \
   --network-passphrase "Test SDF Network ; September 2015" \
-  --ignore-checks 2>&1 | tail -1)
+  --ignore-checks 2>&1) || { echo "$output" >&2; exit 1; }
+LAUNCHPAD_ID=$(echo "$output" | tail -1)
 echo "  Launchpad ID: $LAUNCHPAD_ID"
 
 # 5. Initialize Launchpad
@@ -75,10 +79,10 @@ stellar contract invoke \
   --rpc-url "$RPC_URL" \
   --network-passphrase "Test SDF Network ; September 2015" \
   -- set_wasm_hashes \
-  --normal_721 "$HASH_N721" \
-  --normal_1155 "$HASH_N1155" \
-  --lazy_721 "$HASH_L721" \
-  --lazy_1155 "$HASH_L1155"
+  --wasm_normal_721 "$HASH_N721" \
+  --wasm_normal_1155 "$HASH_N1155" \
+  --wasm_lazy_721 "$HASH_L721" \
+  --wasm_lazy_1155 "$HASH_L1155"
 
 # 6. Update frontend .env.local
 echo "Step 6/6  Updating frontend .env.local..."

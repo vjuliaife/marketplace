@@ -320,10 +320,10 @@ describe('GET /wallets/:address/activity', () => {
 describe('GET /wallets/:address/royalty-stats', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('returns totals for resales where the wallet is the original creator', async () => {
+  it('returns totals for resales where the wallet is in the recipients array', async () => {
     mockPrisma.listing.findMany.mockResolvedValue([
-      { listingId: 1n, price: 100, royaltyBps: 1000, updatedAtLedger: 100 },
-      { listingId: 2n, price: 200, royaltyBps: 500, updatedAtLedger: 200 },
+      { listingId: 1n, price: 100, recipients: [{ address: 'GCREATOR', percentage: 1000 }], updatedAtLedger: 100 },
+      { listingId: 2n, price: 200, recipients: [{ address: 'GCREATOR', percentage: 500 }], updatedAtLedger: 200 },
     ]);
 
     const res = await request(app).get('/wallets/GCREATOR/royalty-stats');
@@ -335,7 +335,6 @@ describe('GET /wallets/:address/royalty-stats', () => {
     expect(mockPrisma.listing.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          originalCreator: 'GCREATOR',
           status: 'Sold',
           NOT: { artist: 'GCREATOR' },
         },
@@ -480,7 +479,7 @@ describe('GET /wallets/:address/activity — extended', () => {
 describe('GET /wallets/:address/royalty-stats — extended', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('returns zeros when the creator has no secondary sales', async () => {
+  it('returns zeros when the wallet has no secondary sales', async () => {
     mockPrisma.listing.findMany.mockResolvedValue([]);
     const res = await request(app).get('/wallets/GNEW/royalty-stats');
     expect(res.status).toBe(200);
@@ -489,9 +488,9 @@ describe('GET /wallets/:address/royalty-stats — extended', () => {
     expect(res.body.lastPayout).toBe(0);
   });
 
-  it('handles royaltyBps of zero without producing NaN', async () => {
+  it('handles percentage of zero without producing NaN', async () => {
     mockPrisma.listing.findMany.mockResolvedValue([
-      { listingId: 1n, price: 500, royaltyBps: 0, updatedAtLedger: 10 },
+      { listingId: 1n, price: 500, recipients: [{ address: 'GCREATOR', percentage: 0 }], updatedAtLedger: 10 },
     ]);
     const res = await request(app).get('/wallets/GCREATOR/royalty-stats');
     expect(res.status).toBe(200);
@@ -508,25 +507,24 @@ describe('GET /wallets/:address/royalty-stats — extended', () => {
 
   it('picks the most recent updatedAtLedger as lastPayout', async () => {
     mockPrisma.listing.findMany.mockResolvedValue([
-      { listingId: 1n, price: 100, royaltyBps: 500, updatedAtLedger: 50 },
-      { listingId: 2n, price: 200, royaltyBps: 500, updatedAtLedger: 200 }, // latest
-      { listingId: 3n, price: 150, royaltyBps: 500, updatedAtLedger: 30 },
+      { listingId: 1n, price: 100, recipients: [{ address: 'GCREATOR', percentage: 500 }], updatedAtLedger: 50 },
+      { listingId: 2n, price: 200, recipients: [{ address: 'GCREATOR', percentage: 500 }], updatedAtLedger: 200 }, // latest
+      { listingId: 3n, price: 150, recipients: [{ address: 'GCREATOR', percentage: 500 }], updatedAtLedger: 30 },
     ]);
     const res = await request(app).get('/wallets/GCREATOR/royalty-stats');
     expect(res.status).toBe(200);
     expect(res.body.lastPayout).toBe(200 * 1000);
   });
 
-  it('correctly filters out self-sales (artist == originalCreator)', async () => {
+  it('correctly filters out self-sales', async () => {
     mockPrisma.listing.findMany.mockResolvedValue([
-      { listingId: 1n, price: 100, royaltyBps: 500, updatedAtLedger: 50 },
+      { listingId: 1n, price: 100, recipients: [{ address: 'GCREATOR', percentage: 500 }], updatedAtLedger: 50 },
     ]);
     await request(app).get('/wallets/GCREATOR/royalty-stats');
     expect(mockPrisma.listing.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           NOT: { artist: 'GCREATOR' },
-          originalCreator: 'GCREATOR',
           status: 'Sold',
         }),
       })
@@ -536,8 +534,8 @@ describe('GET /wallets/:address/royalty-stats — extended', () => {
   it('accumulates totalEarned correctly across multiple resales', async () => {
     // 100 @ 1000 bps = 10; 200 @ 500 bps = 10; total = 20
     mockPrisma.listing.findMany.mockResolvedValue([
-      { listingId: 1n, price: 100, royaltyBps: 1000, updatedAtLedger: 100 },
-      { listingId: 2n, price: 200, royaltyBps: 500,  updatedAtLedger: 200 },
+      { listingId: 1n, price: 100, recipients: [{ address: 'GCREATOR', percentage: 1000 }], updatedAtLedger: 100 },
+      { listingId: 2n, price: 200, recipients: [{ address: 'GCREATOR', percentage: 500 }],  updatedAtLedger: 200 },
     ]);
     const res = await request(app).get('/wallets/GCREATOR/royalty-stats');
     expect(res.status).toBe(200);

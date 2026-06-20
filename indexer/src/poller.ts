@@ -1,4 +1,4 @@
-import { rpc, Contract, TransactionBuilder, BASE_FEE, nativeToScVal, scValToNative } from '@stellar/stellar-sdk';
+import { rpc, Contract, TransactionBuilder, BASE_FEE, nativeToScVal, scValToNative, Keypair, Account } from '@stellar/stellar-sdk';
 import prisma from './db.js';
 import { emitSSEEvent } from './api/routes.js';
 import dotenv from 'dotenv';
@@ -309,6 +309,31 @@ async function fetchAuctionFromChain(_auctionId: bigint): Promise<any | null> {
   return null;
 }
 
+async function fetchTokenUri(collectionId: string, tokenId: bigint): Promise<string | null> {
+  try {
+    const rpcServer = new rpc.Server(RPC_URL, { allowHttp: false });
+    const contract = new Contract(collectionId);
+    const dummy = Keypair.random();
+    const account = await rpcServer.getAccount(dummy.publicKey()).catch(() => new Account(dummy.publicKey(), "0"));
+    const tx = new TransactionBuilder(account, {
+      fee: "10000",
+      networkPassphrase: process.env.STELLAR_NETWORK_PASSPHRASE || "Test SDF Network ; September 2015",
+    })
+      .addOperation(contract.call("token_uri", nativeToScVal(Number(tokenId), { type: "u64" })))
+      .setTimeout(30)
+      .build();
+
+    const simResult = await rpcServer.simulateTransaction(tx);
+    if (rpc.Api.isSimulationSuccess(simResult)) {
+      const retVal = simResult.result?.retval;
+      return scValToNative(retVal)?.toString() || null;
+    }
+  } catch (err) {
+    console.error(`Failed to fetch token URI for collection ${collectionId} token ${tokenId}:`, err);
+  }
+  return null;
+}
+
 export async function applyDecodedEvents(decodedEvents: any[], tx: any) {
   const conditions = decodedEvents.map((event) => ({
     listingId: event.listingId ?? null,
@@ -422,6 +447,8 @@ export async function processEvent(event: any, tx?: any, skipInsert = false) {
           }))
         : [];
 
+      const metadataCid = await fetchTokenUri(collection, nftTokenId);
+
       await db.listing.upsert({
         where: { listingId },
         create: {
@@ -433,6 +460,7 @@ export async function processEvent(event: any, tx?: any, skipInsert = false) {
           collection,
           nftTokenId,
           token,
+          metadataCid,
           status: 'Active',
           recipients,
           createdAtLedger: ledgerSequence,
@@ -443,6 +471,7 @@ export async function processEvent(event: any, tx?: any, skipInsert = false) {
           price,
           collection,
           nftTokenId,
+          metadataCid,
           status: 'Active',
           recipients,
           updatedAtLedger: ledgerSequence,
@@ -509,6 +538,8 @@ export async function processEvent(event: any, tx?: any, skipInsert = false) {
           }))
         : [];
 
+      const metadataCid = await fetchTokenUri(collection, nftTokenId);
+
       await db.auction.upsert({
         where: { auctionId: listingId },
         create: {
@@ -517,6 +548,7 @@ export async function processEvent(event: any, tx?: any, skipInsert = false) {
           collection,
           nftTokenId,
           token,
+          metadataCid,
           reservePrice,
           highestBid: '0',
           highestBidder: null,
@@ -531,6 +563,7 @@ export async function processEvent(event: any, tx?: any, skipInsert = false) {
           collection,
           nftTokenId,
           token,
+          metadataCid,
           reservePrice,
           endTime,
           status: 'Active',

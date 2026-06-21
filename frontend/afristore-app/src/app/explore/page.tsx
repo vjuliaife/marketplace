@@ -96,11 +96,11 @@ export default function ExplorePage() {
       const res = await fetchListings(opts);
       const rows = Array.isArray(res.listings)
         ? (res.listings as Listing[])
-        : [];
-      if (rows.length > 0) {
+        : null;
+      if (rows !== null) {
         setAllListings(rows);
       } else {
-        // Fallback to on-chain scan when indexer returns nothing
+        // Fallback to on-chain scan only when indexer response is malformed
         const all = await getAllListings();
         setAllListings(all);
       }

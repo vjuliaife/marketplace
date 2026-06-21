@@ -423,7 +423,7 @@ export async function getAllListings(): Promise<Listing[]> {
   // Optimized path: Use the indexer (1 RPC/HTTP call)
   try {
     const res = await fetchListings({ status: "Active" });
-    if (res.listings && res.listings.length > 0) {
+    if (Array.isArray(res.listings)) {
       return res.listings as Listing[];
     }
   } catch (e) {
@@ -432,31 +432,12 @@ export async function getAllListings(): Promise<Listing[]> {
 
   // Backup path: On-chain scan (N RPC calls)
   const total = await getTotalListings();
+  if (total <= 0) return [];
   const ids = Array.from({ length: total }, (_, i) => i + 1);
   const results = await Promise.all(
     ids.map((id) => getListing(id).catch(() => null)),
   );
   return results.filter((l): l is Listing => l !== null);
-  const totalRaw = await getTotalListings();
-  if (total <= 0) return [];
-
-  const listings: Listing[] = [];
-  const BATCH_SIZE = 10;
-
-  for (let offset = 1; offset <= total; offset += BATCH_SIZE) {
-    const batchIds = Array.from(
-      { length: Math.min(BATCH_SIZE, total - offset + 1) },
-      (_, i) => offset + i,
-    );
-
-    const results = await Promise.all(
-      batchIds.map((id) => getListing(id).catch(() => null)),
-    );
-
-    listings.push(...results.filter((l): l is Listing => l !== null));
-  }
-
-  return listings;
 }
 
 // ── Offer types mirrored from the Rust contract ──────────────

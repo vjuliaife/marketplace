@@ -120,10 +120,9 @@ describe("useMarketplace", () => {
     );
   });
 
-  it("falls back to on-chain when indexer returns empty", async () => {
+  it("treats empty indexer response as valid — no on-chain fallback", async () => {
     const { fetchListings } = jest.requireMock("@/lib/indexer");
     fetchListings.mockResolvedValueOnce({ listings: [], total: 0 });
-    mockGetAllListings.mockResolvedValueOnce([makeListing(1), makeListing(2)]);
 
     function Comp() {
       const { listings } = useMarketplace();
@@ -131,8 +130,9 @@ describe("useMarketplace", () => {
     }
     render(<Comp />);
     await waitFor(() =>
-      expect(screen.getByTestId("count").textContent).toBe("2"),
+      expect(screen.getByTestId("count").textContent).toBe("0"),
     );
+    expect(mockGetAllListings).not.toHaveBeenCalled();
   });
 
   it("falls back to on-chain when indexer throws", async () => {

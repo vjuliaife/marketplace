@@ -1,4 +1,17 @@
-import { stroopsToXlm, xlmToStroops } from "../lib/contract";
+import { stroopsToXlm, xlmToStroops, getAllListings } from "../lib/contract";
+
+jest.mock("@/lib/e2e-chain-mock", () => ({
+  isE2eMockChain: () => false,
+  e2eMockCreateListing: jest.fn(),
+  e2eMockBuyArtwork: jest.fn(),
+  getE2eMockListings: jest.fn(),
+  registerE2eMockListingsOnWindow: jest.fn(),
+}));
+
+jest.mock("@/lib/indexer", () => ({
+  fetchListings: jest.fn(),
+  fetchAuctions: jest.fn(),
+}));
 
 describe("xlmToStroops", () => {
   it("converts 0.0000001 XLM to 1 stroop (FP bug regression)", () => {
@@ -51,5 +64,41 @@ describe("stroopsToXlm", () => {
     // Whole: 12345678901234567890123n
     // Frac: 4567890n -> "456789"
     expect(stroopsToXlm(largeStroops)).toBe("12345678901234567890123.456789");
+  });
+});
+
+describe("getAllListings — indexer path", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("returns empty array when indexer responds with { listings: [] }", async () => {
+    const { fetchListings } = jest.requireMock("@/lib/indexer");
+    fetchListings.mockResolvedValueOnce({ listings: [] });
+
+    const result = await getAllListings();
+
+    expect(result).toEqual([]);
+    expect(fetchListings).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns listings from indexer without on-chain fallback", async () => {
+    const { fetchListings } = jest.requireMock("@/lib/indexer");
+    const mockListing = { listing_id: 1, artist: "GARTIST", status: "Active" };
+    fetchListings.mockResolvedValueOnce({ listings: [mockListing] });
+
+    const result = await getAllListings();
+
+    expect(result).toEqual([mockListing]);
+    expect(fetchListings).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not return empty array when indexer response has no listings field", async () => {
+    const { fetchListings } = jest.requireMock("@/lib/indexer");
+    // Returns a non-array for listings — should fall through to on-chain path,
+    // but since we cannot reach Soroban in unit tests, we only assert indexer was called.
+    fetchListings.mockResolvedValueOnce({ listings: null });
+
+    // On-chain path will throw (no real RPC) — catch and assert indexer was attempted.
+    await expect(getAllListings()).rejects.toThrow();
+    expect(fetchListings).toHaveBeenCalledTimes(1);
   });
 });

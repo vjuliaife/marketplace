@@ -8,22 +8,22 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useWalletContext } from "@/context/WalletContext";
 import {
-  Wallet,
-  LayoutDashboard,
-  Menu,
-  X,
   AlertTriangle,
-  LogOut,
-  ShieldCheck,
-  Tag,
-  Inbox,
   Compass,
-  User,
   Gavel,
-  Settings,
   HelpCircle,
+  Inbox,
+  LayoutDashboard,
+  LogOut,
+  Menu,
   Rocket,
+  Settings,
+  ShieldCheck,
   Split,
+  Tag,
+  User,
+  Wallet,
+  X,
 } from "lucide-react";
 import { ConnectWalletModal } from "./ConnectWalletModal";
 

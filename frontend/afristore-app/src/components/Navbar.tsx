@@ -9,7 +9,6 @@ import Link from "next/link";
 import { useWalletContext } from "@/context/WalletContext";
 import {
   Wallet,
-  Store,
   LayoutDashboard,
   Menu,
   X,
@@ -74,13 +73,6 @@ export function Navbar() {
 
           {/* Desktop nav links */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 text-white/70 hover:text-brand-400 transition-colors duration-300"
-            >
-              <Store size={16} />
-              Marketplace
-            </Link>
             <Link
               href="/explore"
               className="flex items-center gap-1.5 text-white/70 hover:text-brand-400 transition-colors duration-300"
@@ -224,14 +216,6 @@ export function Navbar() {
         >
           <div className="bg-midnight-950/98 backdrop-blur-xl border-t border-white/5 px-4 py-8 space-y-6">
             <div className="grid grid-cols-1 gap-4">
-              <Link
-                href="/"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 text-white/80 hover:text-brand-400 transition-colors text-lg font-display"
-              >
-                <Store size={20} className="text-brand-500" />
-                Marketplace
-              </Link>
               <Link
                 href="/explore"
                 onClick={() => setMobileOpen(false)}

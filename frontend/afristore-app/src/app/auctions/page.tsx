@@ -9,7 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuctions } from "@/hooks/useAuctions";
 import { Auction, stroopsToXlm } from "@/lib/contract";
-import { fetchMetadata, cidToGatewayUrl, ArtworkMetadata } from "@/lib/ipfs";
+import { getCachedMetadata, cidToGatewayUrl, ArtworkMetadata } from "@/lib/ipfs";
 import {
   Gavel,
   Clock,
@@ -33,25 +33,6 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "Finalized", label: "Finalized" },
   { key: "Cancelled", label: "Cancelled" },
 ];
-
-// ── Metadata cache ──────────────────────────────────────────
-
-const metadataCache = new Map<string, ArtworkMetadata | null>();
-
-async function getCachedMetadata(
-  cid?: string,
-): Promise<ArtworkMetadata | null> {
-  if (!cid) return null;
-  if (metadataCache.has(cid)) return metadataCache.get(cid) ?? null;
-  try {
-    const meta = await fetchMetadata(cid);
-    metadataCache.set(cid, meta);
-    return meta;
-  } catch {
-    metadataCache.set(cid, null);
-    return null;
-  }
-}
 
 // ── Countdown helper ────────────────────────────────────────
 

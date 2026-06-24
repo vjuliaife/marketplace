@@ -467,12 +467,26 @@ impl MarketplaceContract {
             panic_with_error!(&env, MarketplaceError::ContractPaused);
         }
         artist.require_auth();
-        let mut listing = load_listing(&env, listing_id)
-            .unwrap_or_else(|| panic_with_error!(&env, MarketplaceError::ListingNotFound));
+
+        // Reentrancy guard
+        if !acquire_listing_lock(&env, listing_id) {
+            panic_with_error!(&env, MarketplaceError::ReentrancyGuard);
+        }
+
+        let mut listing = match load_listing(&env, listing_id) {
+            Some(l) => l,
+            None => {
+                release_listing_lock(&env, listing_id);
+                panic_with_error!(&env, MarketplaceError::ListingNotFound);
+            }
+        };
+
         if listing.artist != artist {
+            release_listing_lock(&env, listing_id);
             panic_with_error!(&env, MarketplaceError::Unauthorized);
         }
         if listing.status != ListingStatus::Active {
+            release_listing_lock(&env, listing_id);
             panic_with_error!(&env, MarketplaceError::ListingNotActive);
         }
 
@@ -502,6 +516,7 @@ impl MarketplaceContract {
         }
         .publish(&env);
 
+        release_listing_lock(&env, listing_id);
         true
     }
 

@@ -18,32 +18,13 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { SearchFilter, Filters, SortOption } from "@/components/SearchFilter";
-import { fetchMetadata, ArtworkMetadata } from "@/lib/ipfs";
+import { getCachedMetadata, ArtworkMetadata } from "@/lib/ipfs";
 import { fetchListings } from "@/lib/indexer";
 import { getAllListings } from "@/lib/contract";
 
 // ── Types ────────────────────────────────────────────────────
 
 const PAGE_SIZE = 12;
-
-// ── Metadata cache for category / text search ────────────────
-
-const metadataCache = new Map<string, ArtworkMetadata | null>();
-
-async function getCachedMetadata(
-  cid?: string,
-): Promise<ArtworkMetadata | null> {
-  if (!cid) return null;
-  if (metadataCache.has(cid)) return metadataCache.get(cid) ?? null;
-  try {
-    const meta = await fetchMetadata(cid);
-    metadataCache.set(cid, meta);
-    return meta;
-  } catch {
-    metadataCache.set(cid, null);
-    return null;
-  }
-}
 
 // ── Page Component ───────────────────────────────────────────
 

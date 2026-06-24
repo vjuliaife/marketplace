@@ -79,6 +79,59 @@ export async function uploadMetadataToIPFS(
   };
 }
 
+// ── Bounded metadata cache (LRU eviction, max 100 entries) ────
+
+const MAX_CACHE_SIZE = 100;
+
+class MetadataCache {
+  private cache = new Map<string, { data: ArtworkMetadata | null; ttl: number }>();
+
+  get(cid: string): ArtworkMetadata | null | undefined {
+    const entry = this.cache.get(cid);
+    if (!entry) return undefined;
+    if (Date.now() > entry.ttl) {
+      this.cache.delete(cid);
+      return undefined;
+    }
+    // LRU: re-insert to move to end
+    this.cache.delete(cid);
+    this.cache.set(cid, entry);
+    return entry.data;
+  }
+
+  set(cid: string, data: ArtworkMetadata | null, ttlMs = 300_000) {
+    if (this.cache.size >= MAX_CACHE_SIZE) {
+      // Evict oldest (first inserted) entry
+      const oldest = this.cache.keys().next().value;
+      if (oldest !== undefined) this.cache.delete(oldest);
+    }
+    this.cache.set(cid, { data, ttl: Date.now() + ttlMs });
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+}
+
+export const metadataCache = new MetadataCache();
+
+/** Thin wrapper around fetchMetadata that uses the bounded cache. */
+export async function getCachedMetadata(
+  cid?: string,
+): Promise<ArtworkMetadata | null> {
+  if (!cid) return null;
+  const cached = metadataCache.get(cid);
+  if (cached !== undefined) return cached;
+  try {
+    const meta = await fetchMetadata(cid);
+    metadataCache.set(cid, meta);
+    return meta;
+  } catch {
+    metadataCache.set(cid, null);
+    return null;
+  }
+}
+
 // ── Fetch metadata ────────────────────────────────────────────
 
 /**

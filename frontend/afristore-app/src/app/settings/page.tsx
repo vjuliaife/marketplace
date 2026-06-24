@@ -5,6 +5,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useWalletContext } from "@/context/WalletContext";
 import {
   Settings,
@@ -24,67 +25,93 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+const SETTINGS_KEY = "afristore_settings";
+
+interface SettingsState {
+  preferredNetwork: string;
+  autoSwitchNetwork: boolean;
+  showBalance: boolean;
+  showTransactionHistory: boolean;
+  confirmTransactions: boolean;
+  priceAlerts: boolean;
+  offerUpdates: boolean;
+  auctionEndings: boolean;
+  showProfilePublicly: boolean;
+  shareActivityData: boolean;
+  theme: string;
+  language: string;
+  currency: string;
+}
+
+const defaultSettings: SettingsState = {
+  preferredNetwork: "public",
+  autoSwitchNetwork: true,
+  showBalance: true,
+  showTransactionHistory: true,
+  confirmTransactions: true,
+  priceAlerts: true,
+  offerUpdates: true,
+  auctionEndings: true,
+  showProfilePublicly: true,
+  shareActivityData: false,
+  theme: "dark",
+  language: "en",
+  currency: "XLM",
+};
+
+function loadSettings(): SettingsState {
+  if (typeof window === "undefined") return defaultSettings;
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    return stored ? { ...defaultSettings, ...JSON.parse(stored) } : defaultSettings;
+  } catch {
+    return defaultSettings;
+  }
+}
+
+function saveSettings(s: SettingsState) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  } catch {
+    // localStorage may be full or unavailable
+  }
+}
+
 export default function SettingsPage() {
+  const router = useRouter();
   const {
     publicKey,
     isConnected,
     isWrongNetwork,
     disconnect,
-    networkPassphrase,
-    status,
+    network,
+    switchNetwork,
   } = useWalletContext();
 
-  // Derive a human-readable network name from the passphrase
-  const network = networkPassphrase?.includes("Test SDF")
-    ? "testnet"
-    : networkPassphrase?.includes("Public Global")
-      ? "public"
-      : networkPassphrase
-        ? "futurenet"
-        : "public";
+  const [settings, setSettings] = useState<SettingsState>(loadSettings);
 
-  const [settings, setSettings] = useState({
-    // Network Settings
-    preferredNetwork: network || "public",
-    autoSwitchNetwork: true,
-
-    // Wallet Settings
-    showBalance: true,
-    showTransactionHistory: true,
-    confirmTransactions: true,
-
-    // Notification Settings
-    priceAlerts: true,
-    offerUpdates: true,
-    auctionEndings: true,
-
-    // Privacy Settings
-    showProfilePublicly: true,
-    shareActivityData: false,
-
-    // Display Settings
-    theme: "dark",
-    language: "en",
-    currency: "XLM",
-  });
+  useEffect(() => {
+    if (network) {
+      setSettings((prev) => ({ ...prev, preferredNetwork: network }));
+    }
+  }, [network]);
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
-    // Simulate saving settings
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    saveSettings(settings);
+    await new Promise((resolve) => setTimeout(resolve, 300));
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
   const handleNetworkSwitch = async (newNetwork: string) => {
-    // Network switching is handled by the wallet extension (Freighter).
-    // Here we just update local preference state.
-    console.info("Network preference set to:", newNetwork);
     setSettings((prev) => ({ ...prev, preferredNetwork: newNetwork }));
+    await switchNetwork(newNetwork);
   };
 
   const networks = [
@@ -133,7 +160,7 @@ export default function SettingsPage() {
               You need to connect your wallet to access settings
             </p>
             <button
-              onClick={() => (window.location.href = "/")}
+              onClick={() => router.push("/")}
               className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 hover:bg-brand-600"
             >
               Connect Wallet

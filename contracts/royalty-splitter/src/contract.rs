@@ -17,12 +17,7 @@ pub struct RoyaltySplitter;
 impl RoyaltySplitter {
     /// Lock in the token, beneficiaries, and BPS shares forever.
     /// Shares must sum to exactly 10 000. Can only be called once.
-    pub fn initialize(
-        env: Env,
-        token: Address,
-        beneficiaries: Vec<Address>,
-        shares: Vec<u32>,
-    ) {
+    pub fn initialize(env: Env, token: Address, beneficiaries: Vec<Address>, shares: Vec<u32>) {
         if is_initialized(&env) {
             panic_with_error!(&env, SplitterError::AlreadyInitialized);
         }

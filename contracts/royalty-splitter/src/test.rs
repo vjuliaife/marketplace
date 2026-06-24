@@ -253,11 +253,7 @@ fn test_distribute_single_beneficiary_gets_all() {
     let (env, client, token, contract_id) = setup();
     let alice = Address::generate(&env);
 
-    client.initialize(
-        &token,
-        &vec![&env, alice.clone()],
-        &vec![&env, 10_000_u32],
-    );
+    client.initialize(&token, &vec![&env, alice.clone()], &vec![&env, 10_000_u32]);
 
     let sac = StellarAssetClient::new(&env, &token);
     sac.mint(&contract_id, &5_000);

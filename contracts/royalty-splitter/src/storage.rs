@@ -20,9 +20,7 @@ pub fn is_initialized(env: &Env) -> bool {
 }
 
 pub fn set_initialized(env: &Env) {
-    env.storage()
-        .persistent()
-        .set(&DataKey::Initialized, &true);
+    env.storage().persistent().set(&DataKey::Initialized, &true);
     env.storage().persistent().extend_ttl(
         &DataKey::Initialized,
         LEDGER_TTL_THRESHOLD,
@@ -32,11 +30,9 @@ pub fn set_initialized(env: &Env) {
 
 pub fn save_token(env: &Env, token: &Address) {
     env.storage().persistent().set(&DataKey::Token, token);
-    env.storage().persistent().extend_ttl(
-        &DataKey::Token,
-        LEDGER_TTL_THRESHOLD,
-        LEDGER_TTL_BUMP,
-    );
+    env.storage()
+        .persistent()
+        .extend_ttl(&DataKey::Token, LEDGER_TTL_THRESHOLD, LEDGER_TTL_BUMP);
 }
 
 pub fn load_token(env: &Env) -> Address {
@@ -66,11 +62,9 @@ pub fn load_beneficiaries(env: &Env) -> Vec<Address> {
 
 pub fn save_shares(env: &Env, shares: &Vec<u32>) {
     env.storage().persistent().set(&DataKey::Shares, shares);
-    env.storage().persistent().extend_ttl(
-        &DataKey::Shares,
-        LEDGER_TTL_THRESHOLD,
-        LEDGER_TTL_BUMP,
-    );
+    env.storage()
+        .persistent()
+        .extend_ttl(&DataKey::Shares, LEDGER_TTL_THRESHOLD, LEDGER_TTL_BUMP);
 }
 
 pub fn load_shares(env: &Env) -> Vec<u32> {

@@ -26,6 +26,9 @@ const TOPIC_MAP: Record<string, string> = {
   'dep_n1155': 'DEPLOY_NORMAL_1155',
   'dep_l721': 'DEPLOY_LAZY_721',
   'dep_l1155': 'DEPLOY_LAZY_1155',
+  'staked': 'NFT_STAKED',
+  'unstkd': 'NFT_UNSTAKED',
+  'reward': 'REWARDS_CLAIMED',
 };
 
 export function parseMarketplaceEvent(
@@ -65,6 +68,7 @@ export function parseMarketplaceEvent(
   else if (nativeData.offerer) actor = nativeData.offerer.toString();
   else if (nativeData.bidder) actor = nativeData.bidder.toString();
   else if (nativeData.buyer) actor = nativeData.buyer.toString();
+  else if (nativeData.user) actor = nativeData.user.toString();
 
   // For deploy events the value is a tuple (creator, collection_address)
   // scValToNative returns an array for tuples

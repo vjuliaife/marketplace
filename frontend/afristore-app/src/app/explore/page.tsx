@@ -149,10 +149,10 @@ export default function ExplorePage() {
         result.sort((a, b) => a.created_at - b.created_at);
         break;
       case "price-low":
-        result.sort((a, b) => Number(a.price - b.price));
+        result.sort((a, b) => a.price < b.price ? -1 : a.price > b.price ? 1 : 0);
         break;
       case "price-high":
-        result.sort((a, b) => Number(b.price - a.price));
+        result.sort((a, b) => b.price < a.price ? -1 : b.price > a.price ? 1 : 0);
         break;
     }
 

@@ -272,6 +272,21 @@ router.get('/creators/:address/collections', async (req: Request, res: Response)
     }
 });
 
+// GET /wallets/:address/staked — active staked NFTs for a wallet
+router.get('/wallets/:address/staked', async (req: Request, res: Response) => {
+  const { address } = req.params;
+  try {
+    const staked = await prisma.stakedNFT.findMany({
+      where: { owner: address as string, status: 'Active' },
+      orderBy: { stakedAt: 'desc' },
+    });
+    res.json(serialize(staked));
+  } catch (err) {
+    console.error('Error details:', err);
+    res.status(500).json({ error: 'Failed to fetch staked NFTs' });
+  }
+});
+
 // GET /wallets/:address/activity — events relevant to a Stellar account
 router.get('/wallets/:address/activity', strictRateLimiter, async (req: Request, res: Response) => {
     const address = req.params.address as string;

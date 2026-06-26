@@ -15,6 +15,7 @@ dotenv.config();
 const RPC_URL = process.env.STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org';
 const CONTRACT_ID = process.env.MARKETPLACE_CONTRACT_ID || '';
 const LAUNCHPAD_CONTRACT_ID = process.env.LAUNCHPAD_CONTRACT_ID || '';
+const STAKING_CONTRACT_ID = process.env.STAKING_CONTRACT_ID || '';
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL_MS || '5000');
 
 // Retry back-off base in ms; doubles on each consecutive failure up to MAX_BACKOFF_MS.
@@ -27,7 +28,7 @@ let consecutiveErrors = 0;
 let shuttingDown = false;
 
 function getContractIds(): string[] {
-  return [CONTRACT_ID, LAUNCHPAD_CONTRACT_ID].filter(Boolean);
+  return [CONTRACT_ID, LAUNCHPAD_CONTRACT_ID, STAKING_CONTRACT_ID].filter(Boolean);
 }
 
 function updateSyncMetrics(processedLedger: number, networkLatestLedger: number) {
@@ -676,6 +677,69 @@ export async function processEvent(event: any, tx?: any, skipInsert = false) {
         where: { offerId: BigInt(data.offer_id) },
         data: {
           status: 'Withdrawn',
+          updatedAtLedger: ledgerSequence,
+        }
+      });
+      break;
+    }
+
+    case 'NFT_STAKED': {
+      const tokenAddress = data.token_address?.toString() || data.token_address || '';
+      const tokenId = BigInt(data.token_id ?? 0);
+      const collection = data.collection?.toString() || '';
+      const stakedAt = data.timestamp ? new Date(Number(data.timestamp) * 1000) : new Date();
+
+      await db.stakedNFT.upsert({
+        where: {
+          owner_tokenAddress_tokenId: {
+            owner: actor,
+            tokenAddress,
+            tokenId,
+          },
+        },
+        create: {
+          owner: actor,
+          tokenAddress,
+          tokenId,
+          collection,
+          stakedAt,
+          status: 'Active',
+          rewardsEarned: '0',
+          createdAtLedger: ledgerSequence,
+          updatedAtLedger: ledgerSequence,
+        },
+        update: {
+          status: 'Active',
+          stakedAt,
+          updatedAtLedger: ledgerSequence,
+        }
+      });
+      break;
+    }
+
+    case 'NFT_UNSTAKED': {
+      const tokenAddr = data.token_address?.toString() || data.token_address || '';
+      const tId = BigInt(data.token_id ?? 0);
+
+      await db.stakedNFT.updateMany({
+        where: {
+          owner: actor,
+          tokenAddress: tokenAddr,
+          tokenId: tId,
+        },
+        data: {
+          status: 'Unstaked',
+          updatedAtLedger: ledgerSequence,
+        }
+      });
+      break;
+    }
+
+    case 'REWARDS_CLAIMED': {
+      await db.stakedNFT.updateMany({
+        where: { owner: actor, status: 'Active' },
+        data: {
+          rewardsEarned: { increment: data.amount?.toString() || '0' },
           updatedAtLedger: ledgerSequence,
         }
       });

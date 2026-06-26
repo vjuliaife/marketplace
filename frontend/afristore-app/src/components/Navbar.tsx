@@ -14,6 +14,7 @@ import {
   HelpCircle,
   Inbox,
   LayoutDashboard,
+  Lock,
   LogOut,
   Menu,
   Rocket,
@@ -86,6 +87,13 @@ export function Navbar() {
             >
               <Gavel size={16} />
               Auctions
+            </Link>
+            <Link
+              href="/staking"
+              className="flex items-center gap-1.5 text-white/70 hover:text-brand-400 transition-colors duration-300"
+            >
+              <Lock size={16} />
+              Staking
             </Link>
             <Link
               href="/launchpad"
@@ -231,6 +239,14 @@ export function Navbar() {
               >
                 <Gavel size={20} className="text-brand-500" />
                 Auctions
+              </Link>
+              <Link
+                href="/staking"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 text-white/80 hover:text-brand-400 transition-colors text-lg font-display"
+              >
+                <Lock size={20} className="text-brand-500" />
+                Staking
               </Link>
               <Link
                 href="/launchpad"
